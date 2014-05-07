@@ -13,7 +13,6 @@ package:
 		--epoch 1 \
 		--name $(PREFIX)-$(NAME) \
 		--description $(DESCRIPTION) \
-		--maintainer "ops@altiscale.com" \
 		--vendor $(VENDOR) \
 		--url $(URL) \
 		--license 'Apache License, Version 2.0' \
