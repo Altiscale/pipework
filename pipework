@@ -284,11 +284,36 @@ fi
 # Give our ARP neighbors a nudge about the new interface
 if which arping > /dev/null 2>&1
 then
+    # Wait until the interface is up
+    while ! ip netns exec $NSPID ethtool $CONTAINER_IFNAME | grep Link | grep -q 'Link detected: yes$' 2>/dev/null; do
+        sleep 1
+    done
     IPADDR=$(echo $IPADDR | cut -d/ -f1)
     ip netns exec $NSPID arping -c 1 -A -I $CONTAINER_IFNAME $IPADDR > /dev/null 2>&1 || true
 else
     echo "Warning: arping not found; interface may not be immediately reachable"
 fi
+
+[ "$GATEWAY" ] && {
+    if which arp > /dev/null 2>&1
+    then
+        ping -c 1 $GATEWAY > /dev/null 2>&1 # To make sure gateway ARP entry on host is populated
+        GATEWAY_MAC=`arp -an $GATEWAY | cut -d' ' -f4`
+        # Wait until gateway entry appears in the container's ARP table
+        while : ; do
+            ip netns exec $NSPID arp -s $GATEWAY $GATEWAY_MAC
+            if /opt/verticloud/sbin/nsenter --target $NSPID --net -- arp -n $GATEWAY | awk '{print $3}' | grep -q $GATEWAY_MAC
+            then
+                gway=`/opt/verticloud/sbin/nsenter --target $NSPID --net -- arp -n $GATEWAY`
+                echo "Found ${gway}"
+								break
+						fi
+            sleep 1
+        done
+    else
+        echo "Warning: arp not found; interface may not be immediately reachable"
+    fi
+}
 
 # Remove NSPID to avoid `ip netns` catch it.
 [ -f /var/run/netns/$NSPID ] && rm -f /var/run/netns/$NSPID
