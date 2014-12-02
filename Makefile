@@ -1,7 +1,7 @@
 NAME=pipework
 DESCRIPTION="Software-Defined Networking for Linux Containers"
 URL=https://jpetazzo.github.io/
-VERSION=0.1.0
+VERSION=0.1.1
 VENDOR=jpetazzo
 PREFIX=alti
 BUILD_NUMBER?=1
