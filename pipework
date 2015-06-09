@@ -206,7 +206,11 @@ MTU=$(ip link show $IFNAME | awk '{print $5}')
             (ip link set $LOCAL_IFNAME master $IFNAME > /dev/null 2>&1) || (brctl addif $IFNAME $LOCAL_IFNAME)
             ;;
         openvswitch)
-            ovs-vsctl --may-exist add-port $IFNAME $LOCAL_IFNAME ${VLAN:+"tag=$VLAN"}
+            # this horrible hack is needed because --may-exist add-port
+            # doesn't refresh the possibly borked flow database, which
+            # breaks ARP and any possible traffic flow to the ports.
+            ovs-vsctl --if-exists del-port $IFNAME $LOCAL_IFNAME ${VLAN:+"tag=$VLAN"}
+            ovs-vsctl add-port $IFNAME $LOCAL_IFNAME ${VLAN:+"tag=$VLAN"}
             ;;
     esac
     ip link set $LOCAL_IFNAME up
