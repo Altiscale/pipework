@@ -262,26 +262,6 @@ then
 else
     echo "Warning: arping not found; interface may not be immediately reachable"
 fi
-
-[ "$GATEWAY" ] && {
-    if which arp > /dev/null 2>&1
-    then
-        ping -c 1 $GATEWAY > /dev/null 2>&1 # To make sure gateway ARP entry on host is populated
-        GATEWAY_MAC=`arp -an $GATEWAY | cut -d' ' -f4`
-        # Wait until gateway entry appears in the container's ARP table
-        while : ; do
-            ip netns exec $NSPID arp -s $GATEWAY $GATEWAY_MAC
-            if ip netns exec $NSPID arp -n $GATEWAY | awk '{print $3}' | grep -q $GATEWAY_MAC
-            then
-							break
-						fi
-            sleep 1
-        done
-    else
-        echo "Warning: arp not found; interface may not be immediately reachable"
-    fi
-}
-
 # Remove NSPID to avoid `ip netns` catch it.
 [ -f /var/run/netns/$NSPID ] && rm -f /var/run/netns/$NSPID
 exit 0
